@@ -1,8 +1,12 @@
 const router = require("express").Router()
 const { check, validationResult } = require("express-validator")
-const { users } = require("../db")
 const bcrypt = require("bcrypt")
 const JWT = require("jsonwebtoken")
+
+const { users } = require("../db")
+
+console.log("In Auth")
+//Sign up
 router.post(
 	"/signup",
 	[
@@ -16,7 +20,7 @@ router.post(
 		// Validated the input
 		const errors = validationResult(req)
 		if (!errors.isEmpty()) {
-			return res.status(400).json({
+			return res.status(422).json({
 				errors: errors.array(),
 			})
 		}
@@ -24,8 +28,9 @@ router.post(
 		let user = users.find((user) => {
 			return user.email === email
 		})
+
 		if (user) {
-			return res.status(400).json({
+			return res.status(422).json({
 				errors: [
 					{
 						msg: "User already exists",
@@ -56,7 +61,7 @@ router.post(
 		res.json({ token })
 	}
 )
-
+//Login
 router.post("/login", async (req, res) => {
 	const { password, email } = req.body
 
@@ -65,26 +70,27 @@ router.post("/login", async (req, res) => {
 	})
 
 	if (!user) {
-		return res.status(400).json({
+		return res.status(422).json({
 			errors: [
 				{
-					msg: "Invalid Credentials",
+					msg: "Invalid Credentials - no user",
 				},
 			],
 		})
 	}
-
+	//check if pw is valid
 	let isMatch = await bcrypt.compare(password, user.password)
 
 	if (!isMatch) {
 		return res.status(400).json({
 			errors: [
 				{
-					msg: "Invalid Credentials",
+					msg: "Invalid Credentials - pw",
 				},
 			],
 		})
 	}
+	//send the JWT
 	const token = await JWT.sign(
 		{
 			//this will need to be improved for security
